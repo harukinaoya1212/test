@@ -1,5 +1,7 @@
-develop�u�����`�ł̏C������I
-2�s�ڒǉ�
-2�s�ڂɒǉ�������I
-dev_test�ł̏C������I
-marge�����I�I
+developブランチでの修正だよ！
+
+github ！！！
+2行目追加
+2行目に追加したよ！
+dev_testでの修正だよ！
+margeするよ！！

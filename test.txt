@@ -3,3 +3,4 @@ developブランチでの修正だよ！
 2行目に追加したよ！
 dev_testでの修正だよ！
 margeするよ！！
+developでの修正だよ！！！

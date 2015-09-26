@@ -5,11 +5,4 @@ developブランチでの修正だよ！
 dev_testでの修正だよ！
 margeするよ！！
 developでの修正だよ！！！
-=======
-
-github ！！！
-2行目追加
-2行目に追加したよ！
-dev_testでの修正だよ！
-margeするよ！！
->>>>>>> ed2a657d95753ef91bf7f619396e6d684f0dc698
+git stash実験

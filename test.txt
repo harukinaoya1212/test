@@ -1,8 +1,10 @@
 developブランチでの修正だよ！
-<<<<<<< HEAD
 2行目追加
 2行目に追加したよ！
 dev_testでの修正だよ！
 margeするよ！！
 developでの修正だよ！！！
 git stash実験
+git cherry実験
+git cherry実験2
+git cherry実験3

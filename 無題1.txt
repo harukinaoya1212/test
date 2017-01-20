@@ -1,0 +1,156 @@
+// HTTP / HTTPS 通信に必要な SFXHTTPConnection クラスのインスタンス _http は
+// クラスのメンバ変数として定義する
+class MyClass {
+private:
+    SFXHTTPConnection _http;
+    SFXAnsiStringStreamReader _reader;
+    SFXAnsiString _receivedString;
+public:
+    Void Start(Void);
+    CALLBACK_DECLARE_SFXHTTPCONNECTION(OnConnect)
+    CALLBACK_DECLARE_SFXANSISTRINGSTREAMREADER(OnFetch)
+};
+
+Void MyClass::Start(Void)
+{
+    SFCError error(SFERR_NO_ERROR);
+
+    // HTTP 接続の初期化を行う
+    if ((error = _http.Open()) == SFERR_NO_ERROR) {
+    
+        // HTTP リクエスト メソッドを "GET" に設定する
+        // 設定省略時は "GET" となる
+        _http.SetMethod("GET");
+
+        // 接続を開始する
+#if 1
+        // HTTP 接続の場合
+        if ((error = _http.Connect("http://www.example.com/",
+                         CALLBACK_FUNCTION(OnConnect))) == SFERR_NO_ERROR) {
+#else
+        // HTTPS 接続の場合: 
+        //     ※ サーバー証明書が使用するCA証明書が携帯端末に標準搭載
+        //          されていない場合、CA証明書を追加する必要がある
+        //                                     [下記『関連情報』参照]
+        //             
+        // 必要に応じて検証モードを設定する
+        _http.SetTrustMode(SSL_TRUST_MODE_FAIL);
+        if ((error = _http.Connect("https://www.example.com/",
+                         CALLBACK_FUNCTION(OnConnect))) == SFERR_NO_ERROR) {
+#endif
+            ...
+        }
+    }
+
+    if (error != SFERR_NO_ERROR) {
+        // エラーが発生したとき
+        _http.Close();
+    }
+    return;
+}
+
+// 接続が完了すると呼び出されるコールバック関数
+CALLBACK_IMPLEMENT_SFXHTTPCONNECTION(MyClass, OnConnect, error)
+{
+    SFXPropertyConstPtr header;
+    SInt16 i;
+
+    if (error == SFERR_NO_ERROR) {
+        
+        // 各種パラメータを表示する
+
+        // HTTP ステータス コードを取得する
+        TRACE("result code = %d", _http.GetResultCode());
+        // HTTP レスポンス ヘッダーの Content-Length フィールドを取得する
+        TRACE("content length = %d", _http.GetLength()); 
+        // HTTP レスポンス ヘッダーの Content-Type フィールドを取得する
+        TRACE("content type = %s", _http.GetType().GetCString());
+        // HTTP レスポンス ヘッダーの Content-Encoding フィールドを取得する
+        TRACE("content encoding = %s", _http.GetEncoding().GetCString());
+        // HTTP レスポンス ヘッダーの Date フィールドを取得する
+        TRACE("date = %s", 
+              _http.GetDate().Format("YYYY/MM/DD hh:mm:ss").GetCString());
+        // HTTP レスポンス ヘッダーの Expires フィールドを取得する
+        TRACE("expires = %s", 
+              _http.GetExpires().Format("YYYY/MM/DD hh:mm:ss").GetCString());
+        // HTTP レスポンス ヘッダーの Last-Modified フィールドを取得する
+        TRACE("last modified = %s",
+         _http.GetLastModified().Format("YYYY/MM/DD hh:mm:ss").GetCString());
+
+        
+        // HTTP レスポンス ヘッダーを取得する
+        header = &_http.GetResponseHeader();
+        
+        // HTTP レスポンス ヘッダーをすべて表示する
+        for (i = 0; i < header->GetSize(); ++i) {
+            TRACE("%s: %s", header->GetKey(i).GetCString(), 
+                  header->GetValue(i).GetCString());
+        }
+
+        if (_http.GetResultCode() == 200) {
+
+            // データ受信用ストリームを取得する
+            if ((error = _http.GetStreamReader(1024, &_reader))
+                == SFERR_NO_ERROR) {
+
+                // フェッチ(データ受信)する
+                // データ受信が完了すると、OnFetch 関数に通知される
+                if ((error = _reader.Fetch(CALLBACK_FUNCTION(OnFetch)))
+                    == SFERR_NO_ERROR) {
+                    ...
+                }
+            }
+        }
+        else {
+            error = SFERR_INVALID_STATE;
+        }
+    }
+
+    if (error != SFERR_NO_ERROR) {
+        // エラーが発生したとき
+       _http.Close();
+    }
+    return;
+}
+
+// フェッチ(データ受信)が完了したときに呼び出されるコールバック関数
+CALLBACK_IMPLEMENT_SFXANSISTRINGSTREAMREADER(MyClass, OnFetch, error)
+{
+    SFXAnsiString string;
+
+    if (error == SFERR_NO_ERROR) {
+
+        // データ受信用ストリームからデータを取得する
+        if ((error = _reader.ReadSFXAnsiString(&string)) == SFERR_NO_ERROR) {
+
+            // 断片化されたデータを結合する
+            if ((error = _receivedString.Add(string)) == SFERR_NO_ERROR) {
+
+                // 残りのデータをチェックする
+                if (_reader.Ends()) {
+
+                    // すべてのデータが受信できたので表示する
+                    TRACE("--------");
+                    TRACE("%s", _receivedString.GetCString());
+                    TRACE("--------");
+
+                    // 明示的にリソースを解放する
+                    _reader.Release();
+                    _http.Close();
+                }
+                else {
+
+                    // フェッチ(データ受信)する
+                    // データ受信が完了すると、OnFetch 関数に通知される
+                    error = _reader.Fetch(CALLBACK_FUNCTION(OnFetch));
+                }
+            }
+        }
+    }
+
+    if (error != SFERR_NO_ERROR) {
+        // エラーが発生したとき
+        _reader.Release();
+        _http.Close();
+    }
+    return;

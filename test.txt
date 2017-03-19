@@ -12,3 +12,4 @@ eclipse連携だよ！
 久しぶりのmaster修正
 
 hotfix1の修正だよ！
+hotfix1の修正2回目
